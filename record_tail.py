@@ -10,7 +10,7 @@ stim_pin = 4 # pin that is listening to the stimulus line from the microscope, u
 stim_val = 1 # will be used to store the value of the stimulus line
 
 GPIO.setup(stim_pin, GPIO.IN)
-RECORD_TIME = 20000000# number of seconds to record, this can be used to end the experiment or you can just close the window. 
+RECORD_TIME = 20000000# number of seconds to record, this can be used to end the experiment or you can just set this way too long and close the window when you are done an experiment. 
 
 # tracking parameters for adaptive thesholding and morphology operations. Can be adjusted to modify tracking based on indifvidual lighting, etc. 
 thresh = -10
@@ -171,14 +171,14 @@ class show_output(object):
 			cv2.imshow('frame', im_disp)
 			key = cv2.waitKey(1) & 0xFF
 			
-			
-			if key == 84:
+			# keypress logic
+			if key == 84: # up arrow
 				start_coords[1] += 1
-			elif key == 82:
+			elif key == 82: # down arrow
 				start_coords[1] -= 1
-			elif key == 81:
+			elif key == 81: # left
 				start_coords[0] -= 1
-			elif key == 83:
+			elif key == 83: # right
 				start_coords[0] += 1
 
 			elif key == 119: # press 'w' to increase threshold
@@ -187,10 +187,10 @@ class show_output(object):
 			elif key == 115: # press 's' to increase threshold
 				thresh-=1
 				print('threshold = ' + str(thresh))
-			elif key == 100: # press 'w' to increase threshold
+			elif key == 100: # press 'd' to increase nhood
 				n_hood += 2
 				print('neightborhood = ' + str(n_hood))
-			elif key == 97: # press 'w' to increase threshold
+			elif key == 97: # press 'a' to increase threshold
 				n_hood -= 2
 				print('neightborhood = ' + str(n_hood))
 			elif key == 113: # press 'q' to quit
