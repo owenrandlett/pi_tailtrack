@@ -2,7 +2,7 @@
 #%%
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-
+from PIL import Image
 import numpy as np
 import pandas as pd
 import os, glob
@@ -84,6 +84,7 @@ for x_range in x_ranges:
 
 #%%
 
+# load 
 ops = np.load(os.path.join(data_dir, 'combined/ops.npy'), allow_pickle=True).item()
 F = np.load(os.path.join(data_dir, 'combined/F.npy'), allow_pickle=True)
 stat = np.load(os.path.join(data_dir, 'combined/stat.npy'), allow_pickle=True)
@@ -97,7 +98,7 @@ n_cells = np.sum(cells)
 F_zscore = stats.zscore(F[cells,:], axis=1)
 F_zscore[~np.isfinite(F_zscore)] = 0
 stat_cells = stat[cells]
-#%%
+
 motor_sig = ops['corrXY']
 motor_sig[ops['badframes']] = 0
 motor_pow = savgol_filter(np.std(rolling_window(motor_sig, 3), -1), 15, 2)
@@ -108,8 +109,6 @@ time_stamps_imaging = np.load(os.path.join(data_dir, 'time_stamps.npy'))
 time_stamps_imaging = np.mean(time_stamps_imaging, axis=0)/1000 # time stamp in the middle of the stack, in msec
 df_start_inds = np.where(np.diff(stim_df)>0.1)[0]
 df_start_inds = np.delete(df_start_inds, np.where(np.diff(df_start_inds) == 1)[0]+1)
-
-#%%
 
 df_start = np.where(np.diff(stim.flatten())==-1)[0][0]
 t_df_start = time[df_start]
@@ -124,19 +123,6 @@ ind_imaging_end = np.where(time >= t_imaging_end)[0][0]
 
 bend_amps_filt_imaging = bend_amps_filt[ind_imagin_start:ind_imaging_end]
 
-# coords_x = x_coords[ind_imagin_start:ind_imaging_end, :]
-# coords_y = y_coords[ind_imagin_start:ind_imaging_end, :]
-
-# keep_points = 31
-# angles = np.unwrap(np.arctan2(np.diff(coords_x[:, :keep_points], axis=1), np.diff(coords_y[:,:keep_points], axis=1)))
-
-# diffangles = np.diff(angles, axis=1)
-# diffangles[np.isnan(diffangles)] = 0
-#diffangles = savgol_filter(diffangles, 11, 2, axis=0)
-# diffangles[abs(diffangles) > 1] = 0 # max of 1 radian per segment
-#bend_amps = savgol_filter(np.nansum(diffangles, axis=1), 5, 2)
-
-#%%
 
 tail_power = np.std(rolling_window(bend_amps_filt_imaging, int(len(bend_amps_filt_imaging)/len(motor_pow))), -1)
 tail_power = tail_power - np.median(tail_power)
@@ -157,7 +143,6 @@ for x_range in x_ranges:
         #plt.ylim((-0.2,0.2))
         plt.show()
 
-#%%
 
 bout_st = np.where(bout_st_end == 1)[0]
 bout_end = np.where(bout_st_end == -1)[0]
@@ -178,19 +163,28 @@ bouts_power = np.zeros(n_bouts)
 for i in range(n_bouts):
     bouts_meanbend[i] = np.nanmean(bend_amps_filt_imaging[bout_st[i]:bout_end[i]]) 
     bouts_power[i] = np.nanmean(tail_power[bout_st[i]:bout_end[i]]) 
-
+#%%
 swim_turn_thresh = 0.004
-swim_struggle_thresh = 0.01
+swim_struggle_thresh = 0.017
+#%
+out_dir = os.path.join(data_dir, 'images_out')
+if not os.path.exists(out_dir):
+    os.mkdir(out_dir)
+os.chdir(out_dir)
+with plt.rc_context({'lines.linewidth': 2, 'figure.figsize': (9,12), 'font.size':30}):
+    plt.hist(bouts_meanbend, np.arange(-0.02, 0.02, 0.0005))
+    plt.vlines([-swim_turn_thresh, swim_turn_thresh], ymin=0, ymax=50, colors=['g', 'm'])
+    plt.xlabel('mean tail angle, rad/bout')
+    plt.ylabel('counts')
+    plt.savefig('tailangle.svg')
+    plt.show()
 
-plt.hist(bouts_meanbend, 75)
-plt.vlines([-swim_turn_thresh, swim_turn_thresh], ymin=0, ymax=50, colors=['r', 'g'])
-plt.title('mean tail angle')
-plt.show()
-
-plt.hist(bouts_power, 75)
-plt.vlines(swim_struggle_thresh,  ymin=0, ymax=200, colors='r')
-plt.title('mean bout vigor')
-plt.show()
+    plt.hist(bouts_power,  np.arange(0.003, 0.04, 0.0005))
+    plt.vlines(swim_struggle_thresh,  ymin=0, ymax=200, colors='r')
+    plt.xlabel('bout vigor, AU')
+    plt.ylabel('counts')
+    plt.savefig('tailpower.svg')
+    plt.show()
 
 #%%
 
@@ -316,7 +310,13 @@ regressor_struggle = GCaMPConvolve(swim_struggle_vec_frames[1,:], KerTotal)
 # plt.plot(regressor_struggle[inds])
 #%%
 corrMat= np.zeros([n_cells, 5])
-
+corr_order = [
+    'straight_swim',
+    'left turn',
+    'right turn',
+    'swim',
+    'struggle'
+]
 corrMat[:, 0] =  pearsonr_vec_2Dnumb(regressor_straightswim, F_zscore)
 corrMat[:, 1] =  pearsonr_vec_2Dnumb(regressor_left, F_zscore)
 corrMat[:, 2] =  pearsonr_vec_2Dnumb(regressor_right, F_zscore)
@@ -334,22 +334,60 @@ plt.plot(np.nanmean(F_zscore[corrMat[:, 4] > 0.2, :], axis=0), label='struggle')
 plt.legend()
 
 #%%
+
+
 height, width = ops['meanImg'].shape
+
+im_stack = np.zeros((len(corr_order), height, width))
 for corr in range(5):
-    im_stack = np.zeros((height, width))
+    
 
     for i in range(n_cells):
         ypix = stat_cells[i]['ypix']
         xpix = stat_cells[i]['xpix']
         # z = stat_cells[i]['iplane']
-        im_stack[ypix, xpix] = corrMat[i, corr]
-
-    plt.figure(figsize=(20,20))
-    plt.imshow(im_stack, vmin=-0.3, vmax=0.3)
-    plt.show()
-        
+        im_stack[corr, ypix, xpix] = corrMat[i, corr]
     
+    plt.figure(figsize=(20,20))
+    plt.imshow(im_stack[corr, :,:], vmin=-0.3, vmax=0.3)
+    plt.title(corr_order[corr])
+    plt.show()
+#%
+from tifffile import imsave
+imsave('corr_stacks.tif', im_stack)
+imsave('anat_image.tif', ops['meanImg'])
+#%%
 
+# reconstruct the original stack
+n_col = 3
+n_row = 4
+n_sl = int(n_col*n_row)
+height_sl = int(height/n_row)
+width_sl = int(width/n_col)
+
+
+im_slice_stack = np.zeros((n_sl, height_sl, width_sl, len(corr_order)))
+
+
+corr = 0
+for corr in range(5):
+    k=0
+    for i in range(n_row):
+        row_slice = im_stack[corr, height_sl*i:height_sl*(i+1), :]
+        for j in range(n_col):
+            im = row_slice[:, width_sl*j:width_sl*(j+1)]
+            # plt.imshow(im)
+            # plt.title(k)
+            # plt.show()
+            im_slice_stack[k, :,:,corr] = im
+            
+            k+=1
+
+    plt.imshow(np.mean(im_slice_stack[:,:,:,corr], axis=0))
+    plt.title(corr_order[corr])
+    plt.show()
+
+    imsave('corr_stacks_slices' + corr_order[corr] + '.tif', im_slice_stack[:,:,:,corr])
 
 #%%
 
