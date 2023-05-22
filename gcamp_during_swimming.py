@@ -1,15 +1,13 @@
 
 #%%
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from PIL import Image
+import os, glob
 import numpy as np
 import pandas as pd
-import os, glob
+import matplotlib.pyplot as plt
+
+
 from scipy import stats
 from numba import jit, njit, prange
-
-
 from scipy.signal import savgol_filter
 
 def rolling_window(a, window):
@@ -42,9 +40,8 @@ def pearsonr_vec_2Dnumb(x,y):
         corr[row_y] = np.corrcoef(x, y[row_y,:])[0,1]
     return corr
 
-#%%
+#%% load data from tail tracking
 data_dir = os.path.realpath(r'C:\Users\owen.randlett\Dropbox\Written Work\2023_ZebrapmhiPaper\data\20220822')
-
 
 out_dir = os.path.split(data_dir)[0].replace('data', 'fig_data')
 os.chdir(data_dir)
@@ -72,7 +69,6 @@ diff_angles = np.diff(angles, axis=1)
 bend_amps = np.nanmean(diff_angles, axis=1)
 bend_amps[np.isnan(bend_amps)] = 0
 bend_amps_filt = savgol_filter(bend_amps, 11, 5)
-
 
 x_ranges = [np.arange(len(stim)), np.arange(312000,313000), np.arange(435000,445000)]
 for x_range in x_ranges:
