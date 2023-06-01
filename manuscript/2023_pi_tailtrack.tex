@@ -254,7 +254,7 @@ Larval zebrafish were mounted and head restrained for 2-photon imaging and behav
 
 Software was written in Python, using the \emph{picamera} library for camera control \citep{picamera}. Trail tracking was performed using \emph{OpenCV} (cv2 version 4.5.5) \citep{opencv_library}, and \emph{Numpy} (version 1.19.5) \citep{harris2020array}. All code is provided in the file \href{https://github.com/owenrandlett/pi_tailtrack/blob/main/record_tail.py}{record\_tail.py}. The main method for tail extraction was Adaptive Thresholding (cv2.adaptiveThreshold), using a threshold of -10 and a 33 pixel neighborhood. These parameters can be adjusted in real-time using the w/s and a/d keys. The starting coordinate for the tail tracking can be adjusted using the arrow keys. 
 
-Code for generating the figure panels in \autoref{fig:3} can be found in:  \href{https://github.com/owenrandlett/pi_tailtrack/blob/main/plot_tail.ipynb}{plot\_tail.ipynb}
+Code for generating the figure panels in \autoref{fig:3} can be found in:  \href{https://github.com/owenrandlett/pi_tailtrack/blob/main/plot_tail.ipynb}{plot\_tail.ipynb}. Datasets are available here: \href{https://www.dropbox.com/sh/dbjq2dud1ws1o2v/AACLamthISys8sUD1a5oRcR1a?dl=0}{pi\_tailtrack datasets}.
 
 \subsection{Hardware}
 
@@ -359,7 +359,7 @@ I used a Raspberry Pi 4 Model B Rev 1.4 computer, running Raspbian GNU/Linux 11 
 
 2-photon Ca2+ imaging was performed and analyzed as described in \citep{Lamire2023-di}. Briefly, a 5dpf \emph{Tg2(elavl3:GCaMP6s)} (ZDB-ALT-180502-2, \cite{Dunn2016-bg}) larvae was imaged using a 20x 1.0NA water dipping objective (Olympus) on a Bruker Ultima microscope at the CIQLE imaging platform (Lyon, LYMIC). Frames were acquired using a resonant scanner over a rectangular region of 1024×512 pixels (0.6\micro m x/y resolution) and piezo objective to scan 12 planes separated at 10\micro m steps, with a repeat rate of 1.98 hz. ROIs were identified and fluorescence timeseries extracted using suite2p \citep{Pachitariu2016-tl}. The zebrafish was stimulated with 60 "dark flash" stimuli at 60 second ISI \citep{Lamire2023-di}, though responses to these stimuli were not incorporated into the analyses presented here, other than to synchronize the behavioural tracking with the microscope acquisition timing.
 
-Code for generating the figure panels in \autoref{fig:4} can be found in: \href{https://github.com/owenrandlett/pi_tailtrack/blob/main/gcamp_corr_swimming.ipynb}{gcamp\_corr\_swimming.ipynb}. Images output from the analysis were adjusted for brightness/contrast and LUT using FIJI/ImageJ \citep{Schindelin2012-hd}.
+Code for generating the figure panels in \autoref{fig:4} can be found in: \href{https://github.com/owenrandlett/pi_tailtrack/blob/main/gcamp_corr_swimming.ipynb}{gcamp\_corr\_swimming.ipynb}. Datasets are available here: \href{https://www.dropbox.com/sh/dbjq2dud1ws1o2v/AACLamthISys8sUD1a5oRcR1a?dl=0}{pi\_tailtrack datasets}. Images output from the analysis were adjusted for brightness/contrast and LUT using FIJI/ImageJ \citep{Schindelin2012-hd}.
 
 \section{Acknowledgements}
 
