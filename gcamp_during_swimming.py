@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from numba import njit, prange
 from scipy import signal, interpolate
-
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 def rolling_window(a, window):
     pad = np.ones(len(a.shape), dtype=np.int32)
@@ -38,10 +38,11 @@ def pearsonr_vec_2Dnumb(x,y):
         corr[row_y] = np.corrcoef(x, y[row_y,:])[0,1]
     return corr
 
-#%% load data from tail tracking
-data_dir = os.path.realpath(r'C:\Users\owen.randlett\Dropbox\Written Work\2023_ZebrapmhiPaper\data\20220822')
+#% load data from tail tracking
 
-out_dir = os.path.split(data_dir)[0].replace('data', 'fig_data')
+data_dir = os.path.join(dir_path, '20220822')
+
+
 os.chdir(data_dir)
 data = np.loadtxt(glob.glob('*coords.txt')[0], delimiter=',')
 t_stamps = np.loadtxt(glob.glob('*tstamps.txt')[0], delimiter=',')
@@ -66,6 +67,7 @@ diff_angles = np.diff(angles, axis=1)
 
 bend_amps = np.nanmean(diff_angles, axis=1)
 bend_amps[np.isnan(bend_amps)] = 0
+#bend_amps = bend_amps-np.mean(bend_amps)
 bend_amps_filt = signal.savgol_filter(bend_amps, 11, 5)
 
 # plot some traces of bend amplitude
@@ -80,7 +82,7 @@ for x_range in x_ranges:
         plt.legend()
         plt.show()
 
-#%%
+#%
 
 # load Ca2+ imaging data
 ops = np.load(os.path.join(data_dir, 'combined/ops.npy'), allow_pickle=True).item()
@@ -96,7 +98,7 @@ n_cells = np.sum(cells)
 F_zscore = stats.zscore(F[cells,:], axis=1)
 F_zscore[~np.isfinite(F_zscore)] = 0
 stat_cells = stat[cells]
-#%%
+#%
 # we can use the motion artifacts in the Ca2+ imaging to see large motor events, when the brain jiggles. We can use this to sanity check that our traces from the pi_tailtrack are snychonized with the imaging correctly
 motor_sig = ops['corrXY']
 motor_sig[ops['badframes']] = 0
@@ -116,7 +118,7 @@ df_start_inds = np.delete(df_start_inds, np.where(np.diff(df_start_inds) == 1)[0
 # get the timestamps of the first and less dark flash stimulus in the imaging data
 tstamp_imaging_df = time_stamps_imaging[df_start_inds[0]]
 tstamp_imaging_end = time_stamps_imaging[-1]
-#%%
+#%
 # find the index there the first "dark flash" stimulus is seen in pi_tailtrack
 df_start = np.where(np.diff(stim.flatten())==-1)[0][0]
 t_df_start = time[df_start]
@@ -126,7 +128,7 @@ t_imaging_start = t_df_start - tstamp_imaging_df
 ind_imagin_start = np.where(time >= t_imaging_start)[0][0]
 t_imaging_end = t_imaging_start + tstamp_imaging_end
 ind_imaging_end = np.where(time >= t_imaging_end)[0][0]
-#%% simple analyses to identify bouts in the pi_tailtrack data and do some classification as either swims/struggles, and turning dirction
+#% simple analyses to identify bouts in the pi_tailtrack data and do some classification as either swims/struggles, and turning dirction
 bend_amps_filt_imaging = bend_amps_filt[ind_imagin_start:ind_imaging_end]
 time_duringimaging = time[ind_imagin_start:ind_imaging_end]
 tail_power = np.std(rolling_window(bend_amps_filt_imaging, int(len(bend_amps_filt_imaging)/len(motor_pow))), -1)
@@ -224,7 +226,7 @@ for x_range in x_ranges:
         #plt.ylim((-0.2,0.2))
         plt.legend()
         plt.show()
-#%%
+#%
 
 # plot the motor power from the imaging artifacts vs the tail tracking to double check that they are synchronized approprirately based on individal timestamp recorginds
 
@@ -239,7 +241,7 @@ with plt.rc_context({'lines.linewidth': 2, 'figure.figsize': (12,5), 'font.size'
         plt.legend(loc='upper left')
         plt.xlim(xlims)
 
-#%% identify the relevant imaging frames for the bout starts ends that were found based on pi_tailtrack
+#% identify the relevant imaging frames for the bout starts ends that were found based on pi_tailtrack
 
 bout_st_timestamp = time_duringimaging_st0[bout_st]
 bout_end_timestamp = time_duringimaging_st0[bout_end]
@@ -263,55 +265,8 @@ for i in range(len(swim_struggle)):
     st = bout_starts_frames[i]
     end = bout_ends_frames[i]
     swim_struggle_vec_frames[int(swim_struggle[i]-1), st:end] = 1
-#%%
-
-# interp = interpolate.interp1d(time[ind_imagin_start:ind_imaging_end], tail_power)
-# tail_power_interp = interp(np.arange(time[ind_imagin_start], time[ind_imaging_end], 1/5))
-# tail_power_frames = signal.resample(tail_power_interp, len(motor_pow))
-
-# # interp_bendAmp = interpolate.interp1d(time[ind_imagin_start:ind_imaging_end], bend_amps_filt_imaging)
-# bend_amps_interp = interp(np.arange(time[ind_imagin_start], time[ind_imaging_end], 1/5))
-# bend_amps_frames = signal.resample(bend_amps_interp, len(motor_pow))
-
-# tail_power_thresh = 0.1
-# tail_power_frames[tail_power_frames<tail_power_thresh] = 0
-# motor_pow[motor_pow<tail_power_thresh] = 0
-# with plt.rc_context({'font.size':20}):
-#     max_y = np.max([tail_power_frames, motor_pow])
-#     fig, ax = plt.subplots(nrows=5, figsize=(13,20))
-    
-#     for k,i in enumerate(range(0, 5)):
-#         inds = np.arange(1500) + 1500*i
-#         ax[k].plot(inds, bend_amps_frames[inds]*10)
-#         ax[k].plot(inds, motor_pow[inds])
-#         ax[k].set_ylabel('inferred\n movement')
-#         #ax[k].set_ylim((0,max_y))
-#         #ax[k].set_ylim((-0.1, 1))
-#     ax[0].legend(['tail tracking', 'suite2p image\nmotion artifact'])
-    
-#     plt.xlabel('time (frames)')
-
-#     plt.show()
-
-
 #%
-# time_compression = len(tail_power)/len(motor_pow)
-# bout_starts_interp = (bout_st/time_compression).astype(int)
-# bout_ends_interp = (bout_end/time_compression).astype(int)
 
-# bout_ends_interp[bout_starts_interp==bout_ends_interp]+=1
-
-# swim_turn_vec_frames = np.zeros((3, len(motor_pow)))
-# for i in range(len(turn_swim)):
-#     st = bout_starts_interp[i]
-#     end = bout_ends_interp[i]
-#     swim_turn_vec_frames[int(turn_swim[i]-1), st:end] = 1
-
-# swim_struggle_vec_frames = np.zeros((2, len(motor_pow)))
-# for i in range(len(swim_struggle)):
-#     st = bout_starts_interp[i]
-#     end = bout_ends_interp[i]
-#     swim_struggle_vec_frames[int(swim_struggle[i]-1), st:end] = 1
 
 
 # parameters for GCaMP kernel
@@ -350,7 +305,7 @@ regressor_struggle = GCaMPConvolve(swim_struggle_vec_frames[1,:], KerTotal)
 # plt.plot(regressor_right[inds])
 # plt.plot(regressor_swim[inds])
 # plt.plot(regressor_struggle[inds])
-#%% calculate the pearson correlation between the R
+#% calculate the pearson correlation between the R
 corrMat= np.zeros([n_cells, 5])
 corr_order = [
     'straight_swim',
@@ -365,7 +320,7 @@ corrMat[:, 2] =  pearsonr_vec_2Dnumb(regressor_right, F_zscore)
 corrMat[:, 3] =  pearsonr_vec_2Dnumb(regressor_swim, F_zscore)
 corrMat[:, 4] =  pearsonr_vec_2Dnumb(regressor_struggle, F_zscore)
 corrMat[np.isnan(corrMat)] = 0
-#%%
+#%
 plt.plot(np.nanmean(F_zscore[corrMat[:, 1] > 0.2, :], axis=0), label='left')
 plt.plot(np.nanmean(F_zscore[corrMat[:, 2] > 0.2, :], axis=0), label='right')
 plt.legend()
@@ -375,7 +330,7 @@ plt.plot(np.nanmean(F_zscore[corrMat[:, 3] > 0.2, :], axis=0), label='swim')
 plt.plot(np.nanmean(F_zscore[corrMat[:, 4] > 0.2, :], axis=0), label='struggle')
 plt.legend()
 
-#%%
+#%
 
 
 height, width = ops['meanImg'].shape
@@ -398,7 +353,7 @@ for corr in range(5):
 from tifffile import imsave
 imsave('corr_stacks.tif', im_stack)
 imsave('anat_image.tif', ops['meanImg'])
-#%%
+#%
 
 # reconstruct the original stack
 n_col = 3
@@ -427,4 +382,4 @@ for corr in range(5):
 
 stack_reslice = reslie_stack(ops['meanImg'])
 imsave('anatomy_stack.tif', stack_reslice)
-#%%
+
