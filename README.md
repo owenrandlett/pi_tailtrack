@@ -8,4 +8,4 @@ Quantifying animal behavior during microscopy is crucial to associate optically 
 
 ## Reference:
 
-*pi_tailtrack*: A compact, inexpensive, and open-source behaviour-tracking system for head-restrained zebrafish: Randlet O. bioRxiv (2023) https://doi.org/10.1101/2023.06.01.543206
+*pi_tailtrack*: A compact, inexpensive, and open-source behaviour-tracking system for head-restrained zebrafish: Randlet O. Journal of Experimental Biology (2023) 226, jeb246335. doi:10.1242/jeb.246335
